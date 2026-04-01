@@ -2,82 +2,196 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Leitor Simples</title>
+<title>Sistema Escolar</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
   body {
     font-family: Arial;
+    background: #ddd;
     text-align: center;
-    background: #eee;
   }
 
   #reader {
     width: 300px;
-    margin: auto;
+    margin: 20px auto;
   }
 
-  .box {
-    background: white;
+  button {
     padding: 10px;
-    width: 300px;
-    margin: 20px auto;
-    border-radius: 10px;
+    margin: 10px;
+    cursor: pointer;
+  }
+
+  .status {
+    font-weight: bold;
+    margin: 10px;
   }
 
   .ok { color: green; }
   .erro { color: red; }
+
+  /* CARTEIRINHA */
+  .card {
+    width: 700px;
+    height: 350px;
+    display: none;
+    margin: 20px auto;
+    background: #d6d6d6;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  }
+
+  .card-content {
+    display: flex;
+    height: 100%;
+  }
+
+  .foto {
+    width: 40%;
+  }
+
+  .foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .info {
+    width: 60%;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .escola {
+    font-size: 18px;
+  }
+
+  .nome {
+    font-size: 30px;
+    font-weight: bold;
+  }
+
+  .motivo {
+    font-size: 20px;
+    word-wrap: break-word;
+  }
+
+  .codigo img {
+    width: 100%;
+    height: 80px;
+    object-fit: contain;
+  }
+
+  .id {
+    font-size: 16px;
+  }
 </style>
 </head>
 <body>
 
-<h2>Câmera Leitor</h2>
+<h2>Leitor Escolar</h2>
 
 <div id="reader"></div>
 
-<div class="box">
-  <p id="status">Aguardando...</p>
-  <p>Nome: <span id="nome"></span></p>
-  <p>ID: <span id="id"></span></p>
-  <p>Motivo: <span id="motivo"></span></p>
+<button onclick="trocarCamera()">🔄 Trocar Câmera</button>
+
+<p id="status" class="status">Aguardando leitura...</p>
+
+<!-- CARTEIRINHA -->
+<div class="card" id="card">
+  <div class="card-content">
+
+    <div class="foto">
+      <img id="foto" src="">
+    </div>
+
+    <div class="info">
+      <div class="escola">E.B.M. José Do Valle Pereira</div>
+
+      <div class="nome" id="nome"></div>
+
+      <div class="motivo" id="motivo"></div>
+
+      <div class="codigo">
+        <img id="barcode">
+        <div class="id" id="id"></div>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <script>
+let scanner = new Html5Qrcode("reader");
+let cameras = [];
+let cameraAtual = 0;
+
+// 🎯 FUNÇÃO PRINCIPAL
 function sucesso(codigo) {
   const status = document.getElementById("status");
+  const card = document.getElementById("card");
 
   if (codigo === "29GC2791") {
     status.innerText = "Aluno confirmado ✅";
-    status.className = "ok";
+    status.className = "status ok";
 
-    document.getElementById("nome").innerText = "Gabriel Cruz Da Silva";
+    document.getElementById("nome").innerText = "GABRIEL CRUZ";
+    document.getElementById("motivo").innerText =
+      "Projeto Contra-Turno, Marcenaria Com Prof Salete Dos Santos";
+
     document.getElementById("id").innerText = "29GC2791";
-    document.getElementById("motivo").innerText = "Projeto Contra-Turno";
+
+    document.getElementById("foto").src =
+      "https://i.ibb.co/XkKmktzp/Whats-App-Image-2026-03-31-at-18-05-54.jpg";
+
+    document.getElementById("barcode").src =
+      "https://barcode.tec-it.com/barcode.ashx?data=29GC2791&code=Code128";
+
+    card.style.display = "block";
 
   } else {
     status.innerText = "Aluno não confirmado ❌";
-    status.className = "erro";
+    status.className = "status erro";
 
-    document.getElementById("nome").innerText = "";
-    document.getElementById("id").innerText = "";
-    document.getElementById("motivo").innerText = "";
+    card.style.display = "none";
   }
 }
 
-const scanner = new Html5Qrcode("reader");
+// 📷 INICIAR CÂMERA
+Html5Qrcode.getCameras().then(lista => {
+  cameras = lista;
 
-Html5Qrcode.getCameras().then(cameras => {
   if (cameras.length) {
-    scanner.start(
-      cameras[0].id,
-      { fps: 10, qrbox: 250 },
-      (decodedText) => {
-        sucesso(decodedText);
-      }
-    );
+    iniciarCamera(cameras[cameraAtual].id);
   }
 });
+
+function iniciarCamera(id) {
+  scanner.start(
+    id,
+    { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      sucesso(decodedText);
+    }
+  );
+}
+
+// 🔄 TROCAR CÂMERA
+function trocarCamera() {
+  if (cameras.length > 1) {
+    cameraAtual = (cameraAtual + 1) % cameras.length;
+
+    scanner.stop().then(() => {
+      iniciarCamera(cameras[cameraAtual].id);
+    });
+  }
+}
 </script>
 
 </body>

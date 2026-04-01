@@ -1,119 +1,83 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Leitor com Firebase</title>
+<meta charset="UTF-8">
+<title>Leitor Simples</title>
 
-  <!-- QR Scanner -->
-  <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 
-  <style>
-    body {
-      font-family: Arial;
-      background: #f0f0f0;
-      text-align: center;
-    }
+<style>
+  body {
+    font-family: Arial;
+    text-align: center;
+    background: #eee;
+  }
 
-    #reader {
-      width: 300px;
-      margin: auto;
-    }
+  #reader {
+    width: 300px;
+    margin: auto;
+  }
 
-    .box {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      width: 300px;
-      margin: 20px auto;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    }
+  .box {
+    background: white;
+    padding: 10px;
+    width: 300px;
+    margin: 20px auto;
+    border-radius: 10px;
+  }
 
-    img {
-      width: 120px;
-      height: 120px;
-      border-radius: 10px;
-    }
-
-    .ok { color: green; font-weight: bold; }
-    .erro { color: red; font-weight: bold; }
-  </style>
+  .ok { color: green; }
+  .erro { color: red; }
+</style>
 </head>
 <body>
 
-<h2>Leitura com Firebase</h2>
+<h2>Câmera Leitor</h2>
 
 <div id="reader"></div>
 
 <div class="box">
-  <p id="status">Aguardando leitura...</p>
-  <img id="foto" src="" style="display:none;">
-  <p><b>Nome:</b> <span id="nome"></span></p>
-  <p><b>ID:</b> <span id="id"></span></p>
-  <p><b>Motivo:</b> <span id="motivo"></span></p>
+  <p id="status">Aguardando...</p>
+  <p>Nome: <span id="nome"></span></p>
+  <p>ID: <span id="id"></span></p>
+  <p>Motivo: <span id="motivo"></span></p>
 </div>
 
-<script type="module">
-  // Firebase
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script>
+function sucesso(codigo) {
+  const status = document.getElementById("status");
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAyXEqSP0WG5CPw7ZrMQ6v5WUb_OPi_UoI",
-    authDomain: "spjvp-49fde.firebaseapp.com",
-    projectId: "spjvp-49fde",
-    storageBucket: "spjvp-49fde.firebasestorage.app",
-    messagingSenderId: "790148342609",
-    appId: "1:790148342609:web:18a3a59a4d52ba50572970"
-  };
+  if (codigo === "29GC2791") {
+    status.innerText = "Aluno confirmado ✅";
+    status.className = "ok";
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    document.getElementById("nome").innerText = "Gabriel Cruz Da Silva";
+    document.getElementById("id").innerText = "29GC2791";
+    document.getElementById("motivo").innerText = "Projeto Contra-Turno";
 
-  async function sucessoLeitura(codigo) {
-    const status = document.getElementById("status");
+  } else {
+    status.innerText = "Aluno não confirmado ❌";
+    status.className = "erro";
 
-    try {
-      const ref = doc(db, "alunos", codigo);
-      const snap = await getDoc(ref);
-
-      if (snap.exists()) {
-        const aluno = snap.data();
-
-        status.innerHTML = "Aluno confirmado ✅";
-        status.className = "ok";
-
-        document.getElementById("nome").innerText = aluno.nome;
-        document.getElementById("id").innerText = codigo;
-        document.getElementById("motivo").innerText = aluno.motivo;
-
-        const foto = document.getElementById("foto");
-        foto.src = aluno.foto;
-        foto.style.display = "block";
-
-      } else {
-        throw "não existe";
-      }
-
-    } catch {
-      status.innerHTML = "Aluno não confirmado ❌";
-      status.className = "erro";
-
-      document.getElementById("nome").innerText = "";
-      document.getElementById("id").innerText = "";
-      document.getElementById("motivo").innerText = "";
-      document.getElementById("foto").style.display = "none";
-    }
+    document.getElementById("nome").innerText = "";
+    document.getElementById("id").innerText = "";
+    document.getElementById("motivo").innerText = "";
   }
+}
 
-  const scanner = new Html5QrcodeScanner("reader", {
-    fps: 10,
-    qrbox: 250
-  });
+const scanner = new Html5Qrcode("reader");
 
-  scanner.render((decodedText) => {
-    sucessoLeitura(decodedText);
-  });
-
+Html5Qrcode.getCameras().then(cameras => {
+  if (cameras.length) {
+    scanner.start(
+      cameras[0].id,
+      { fps: 10, qrbox: 250 },
+      (decodedText) => {
+        sucesso(decodedText);
+      }
+    );
+  }
+});
 </script>
 
 </body>
